@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Books | LibraryOS</title><link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header>
+  <a class="logo" href="/">📚 Library<span>OS</span></a>
+  <nav><a href="/">Dashboard</a><a class="active" href="/books">Books</a><a href="/students">Students</a><a href="/issue">Issue / Return</a><a href="/transactions">Transactions</a></nav>
+  <div class="account"><form method="post" action="/logout"><input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"><button class="logout">Log out</button></form></div>
+</header>
+
+<main class="books-page">
+  <div class="page-title books-title-row">
+    <div><p class="eyebrow">DIGITAL CATALOGUE</p><h1>Book Collection</h1><p>Browse the complete collection. <b>Tap any book</b> to see its full details.</p></div>
+    <a class="button" href="/admin/books/new">＋ Add book</a>
+  </div>
+
+  <div class="alert success" th:if="${message}" th:text="${message}"></div>
+  <div class="alert error" th:if="${error}" th:text="${error}"></div>
+
+  <div class="catalog-toolbar">
+    <form class="searchbar catalog-search" method="get" action="/books">
+      <span>⌕</span><input name="q" th:value="${q}" placeholder="Search title, author or ISBN..."><button class="button">Search</button>
+    </form>
+    <div class="catalog-hint"><span>◉</span> Click a book for details</div>
+  </div>
+
+  <section class="catalog-grid" th:if="${!#lists.isEmpty(books)}">
+    <article class="catalog-card" th:each="b : ${books}"
+      th:attr="data-id=${b.id},data-title=${b.title},data-author=${b.author},data-isbn=${b.isbn},data-category=${b.category},data-publisher=${b.publisher},data-year=${b.publicationYear},data-shelf=${b.shelfNumber},data-description=${b.description},data-cover=${b.coverImage},data-available=${b.availableQuantity},data-total=${b.quantity}"
+      onclick="openBookDetails(this)" tabindex="0" onkeydown="if(event.key==='Enter')openBookDetails(this)">
+      <div class="catalog-cover">
+        <img th:src="${b.coverImage != null ? b.coverImage : '/images/library-bg.jpg'}" th:alt="${b.title + ' cover'}">
+        <span class="availability-pill" th:classappend="${b.availableQuantity > 0 ? ' is-available' : ' is-unavailable'}" th:text="${b.availableQuantity > 0 ? 'Available' : 'Unavailable'}"></span>
+        <div class="cover-glow"></div>
+      </div>
+      <div class="catalog-info">
+        <span class="tag" th:text="${b.category == null ? 'General' : b.category}"></span>
+        <h3 th:text="${b.title}"></h3>
+        <p class="catalog-author" th:text="${b.author}"></p>
+        <div class="catalog-bottom"><span th:text="${b.availableQuantity + '/' + b.quantity + ' copies'}"></span><span>View details →</span></div>
+      </div>
+      <div class="catalog-actions" onclick="event.stopPropagation()">
+        <a class="small-btn" th:href="@{'/admin/books/edit/' + ${b.id}}">Edit</a>
+        <form th:action="@{'/admin/books/delete/' + ${b.id}}" method="post" onsubmit="return confirm('Delete this book?')">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"><button class="small-btn danger-btn">Delete</button>
+        </form>
+      </div>
+    </article>
+  </section>
+
+  <section class="empty-catalog" th:if="${#lists.isEmpty(books)}">
+    <div>📚</div><h2>No books found</h2><p>Try another search or add a new book to the collection.</p><a class="button" href="/admin/books/new">＋ Add first book</a>
+  </section>
+</main>
+
+<!-- Single-page book detail modal: collection + details are now one experience -->
+<div id="bookModal" class="book-modal" aria-hidden="true" onclick="closeBookDetails(event)">
+  <div class="book-modal-panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle" onclick="event.stopPropagation()">
+    <button class="modal-close" type="button" onclick="closeBookDetails()" aria-label="Close">×</button>
+    <div class="modal-cover"><img id="modalCover" src="" alt="Book cover"></div>
+    <div class="modal-content">
+      <div class="modal-top"><span id="modalCategory" class="tag"></span><span id="modalAvailability" class="status available"></span></div>
+      <p class="eyebrow">BOOK DETAILS</p>
+      <h2 id="modalTitle"></h2>
+      <p class="modal-author" id="modalAuthor"></p>
+      <p class="modal-description" id="modalDescription"></p>
+      <div class="detail-grid">
+        <div><small>ISBN</small><b id="modalIsbn">—</b></div>
+        <div><small>Publisher</small><b id="modalPublisher">—</b></div>
+        <div><small>Published</small><b id="modalYear">—</b></div>
+        <div><small>Shelf</small><b id="modalShelf">—</b></div>
+        <div><small>Total copies</small><b id="modalTotal">—</b></div>
+        <div><small>Available</small><b id="modalAvailable">—</b></div>
+      </div>
+      <div class="modal-footer"><span>📖 Tap a book anytime to inspect its complete record.</span><a id="modalEdit" class="button" href="#">Edit book</a></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function textOrDash(v){ return v && v !== 'null' && v !== 'undefined' ? v : '—'; }
+function openBookDetails(card){
+  const d=card.dataset;
+  document.getElementById('modalCover').src=d.cover && d.cover!=='null' ? d.cover : '/images/library-bg.jpg';
+  document.getElementById('modalCover').alt=d.title+' cover';
+  document.getElementById('modalCategory').textContent=textOrDash(d.category==='null'?null:d.category);
+  const available=Number(d.available||0), total=Number(d.total||0);
+  const status=document.getElementById('modalAvailability');
+  status.textContent=available>0 ? available+' of '+total+' available' : 'Currently unavailable';
+  status.className='status '+(available>0?'available':'unavailable');
+  document.getElementById('modalTitle').textContent=d.title;
+  document.getElementById('modalAuthor').textContent='by '+d.author;
+  document.getElementById('modalDescription').textContent=textOrDash(d.description);
+  document.getElementById('modalIsbn').textContent=textOrDash(d.isbn);
+  document.getElementById('modalPublisher').textContent=textOrDash(d.publisher);
+  document.getElementById('modalYear').textContent=textOrDash(d.year);
+  document.getElementById('modalShelf').textContent=textOrDash(d.shelf);
+  document.getElementById('modalTotal').textContent=total;
+  document.getElementById('modalAvailable').textContent=available;
+  document.getElementById('modalEdit').href='/admin/books/edit/'+d.id;
+  document.getElementById('bookModal').classList.add('show');
+  document.getElementById('bookModal').setAttribute('aria-hidden','false');
+  document.body.classList.add('modal-open');
+}
+function closeBookDetails(e){
+  if(e && e.target && !e.target.classList.contains('book-modal')) return;
+  document.getElementById('bookModal').classList.remove('show');
+  document.getElementById('bookModal').setAttribute('aria-hidden','true');
+  document.body.classList.remove('modal-open');
+}
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeBookDetails(); });
+</script>
+</body></html>

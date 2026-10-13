@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sign in | Library Management System</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="login-page">
+  <div class="login-shell">
+    <section class="login-visual">
+      <div class="visual-overlay"></div>
+      <div class="visual-content">
+        <div class="visual-logo"><span class="book-mark">📖</span><span>Library <b>Management</b> System</span></div>
+        <p class="visual-tagline">Read · Learn · Grow</p>
+        <div class="feature-row">
+          <div><span>📚</span><b>Manage Books</b><small>Organize your collection</small></div>
+          <div><span>👥</span><b>Track Members</b><small>Keep readers connected</small></div>
+          <div><span>↗</span><b>Handle Transactions</b><small>Issue & return easily</small></div>
+        </div>
+        <div class="visual-bottom">
+          <div class="book-stack"><i>Data Structures</i><i>Clean Code</i><i>Web Development</i></div>
+          <p>“A library is a hospital for the mind.”</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="login-card modern-login-card">
+      <div class="brand-mark">L</div>
+      <div class="login-heading"><span class="eyebrow">WELCOME BACK</span><h1>Library Portal</h1><p>Sign in to manage your library</p></div>
+      <div class="alert error" th:if="${param.error}">Invalid username or password.</div>
+      <div class="alert success" th:if="${param.logout}">You have signed out.</div>
+      <form method="post" action="/login">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <label><span>Username</span><div class="input-wrap"><span>👤</span><input name="username" autocomplete="username" placeholder="Enter your username" required autofocus></div></label>
+        <label><span>Password</span><div class="input-wrap"><span>🔒</span><input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required><button type="button" class="password-toggle" onclick="togglePassword()">◉</button></div></label>
+        <div class="login-options"><label class="remember"><input type="checkbox"> <span>Remember me</span></label><a href="javascript:void(0)">Forgot password?</a></div>
+        <button class="button full login-btn"><span>→</span> Sign in securely</button>
+      </form>
+      <div class="demo"><b>Demo accounts</b><div><span>Admin</span> <code>admin / Admin@123</code></div><div><span>Student</span> <code>student / Student@123</code></div></div>
+      <p class="login-footer">Secure library access · Read more, learn more.</p>
+    </section>
+  </div>
+  <script>
+    function togglePassword(){const p=document.getElementById('password');p.type=p.type==='password'?'text':'password';}
+  </script>
+</body>
+</html>
